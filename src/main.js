@@ -46,7 +46,7 @@ app.innerHTML = `
       <button class="deck-button deck-button--hero" id="random-button" type="button">${icon('dice')}<span>ROLL</span></button>
       <button class="deck-button" id="mutate-button" type="button">${icon('spark')}<span>MUTATE</span></button>
       <button class="deck-button" id="next-button" type="button">${icon('next')}<span>NEXT</span></button>
-      <button class="auto-button" id="auto-button" type="button" aria-pressed="false">${icon('auto')}<span>AUTO VJ</span><i></i></button>
+      <button class="auto-button" id="auto-button" type="button" aria-pressed="false">${icon('auto')}<span>AUTO</span><i></i></button>
     </nav>
 
     <button class="restore-ui" id="restore-ui" type="button">SHOW CONTROLS</button>
@@ -69,7 +69,7 @@ app.innerHTML = `
         <header><div><span class="eyebrow">PERFORMANCE</span><h2>CONTROL DECK</h2></div><button class="round-button" data-close-sheet type="button">${icon('close')}</button></header>
         <div class="setting-row">
           <label for="transition">MORPH TIME <output id="transition-output">3.5s</output></label>
-          <input id="transition" type="range" min="0" max="10" step="0.1" value="3.5" />
+          <input id="transition" type="range" min="1.2" max="10" step="0.1" value="3.5" />
         </div>
         <div class="setting-row">
           <label for="reactivity">REACTIVITY <output id="reactivity-output">1.00×</output></label>

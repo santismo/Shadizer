@@ -55,7 +55,8 @@ export class VisualizerEngine extends EventTarget {
     this.historyIndex = -1;
     this.favorites = new Set(JSON.parse(localStorage.getItem('shadizer:favorites') || '[]'));
     this.quality = Number(localStorage.getItem('shadizer:quality') || 0.72);
-    this.transitionSeconds = Number(localStorage.getItem('shadizer:transition') || 3.5);
+    const savedTransition = Number(localStorage.getItem('shadizer:transition') || 3.5);
+    this.transitionSeconds = clamp(Number.isFinite(savedTransition) ? savedTransition : 3.5, 1.2, 10);
     this.colorMode = localStorage.getItem('shadizer:color') || 'original';
     this.frameHandle = 0;
     this.running = false;
@@ -188,7 +189,8 @@ export class VisualizerEngine extends EventTarget {
     for (let attempts = 0; attempts < 8 && next === this.currentName; attempts += 1) {
       next = this.names[Math.floor(Math.random() * this.names.length)];
     }
-    this.load(next, options);
+    const blend = options.blend ?? Math.max(4.2, this.transitionSeconds);
+    this.load(next, { ...options, blend });
   }
 
   next() {
@@ -250,7 +252,8 @@ export class VisualizerEngine extends EventTarget {
   }
 
   setTransition(value) {
-    this.transitionSeconds = Number(value);
+    const seconds = Number(value);
+    this.transitionSeconds = clamp(Number.isFinite(seconds) ? seconds : 3.5, 1.2, 10);
     localStorage.setItem('shadizer:transition', String(this.transitionSeconds));
   }
 
