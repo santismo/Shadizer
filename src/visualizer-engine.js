@@ -1,6 +1,18 @@
 import butterchurn from 'butterchurn';
 import butterchurnPresets from 'butterchurn-presets';
 
+function resolveModuleApi(moduleValue, methodName) {
+  let candidate = moduleValue;
+  for (let depth = 0; depth < 4 && candidate; depth += 1) {
+    if (typeof candidate[methodName] === 'function') return candidate;
+    candidate = candidate.default;
+  }
+  throw new TypeError(`Could not find ${methodName} in the loaded visualizer module.`);
+}
+
+const butterchurnApi = resolveModuleApi(butterchurn, 'createVisualizer');
+const basePresetPack = resolveModuleApi(butterchurnPresets, 'getPresets');
+
 const MUTABLE_BASE_VALUES = {
   zoom: [0.82, 1.22],
   rot: [-0.18, 0.18],
@@ -35,7 +47,7 @@ export class VisualizerEngine extends EventTarget {
     super();
     this.canvas = canvas;
     this.visualizer = null;
-    this.presets = butterchurnPresets.getPresets();
+    this.presets = basePresetPack.getPresets();
     this.names = Object.keys(this.presets).sort((a, b) => a.localeCompare(b));
     this.currentName = '';
     this.currentPreset = null;
@@ -62,7 +74,7 @@ export class VisualizerEngine extends EventTarget {
   async initialize(audioEngine) {
     this.audioEngine = audioEngine;
     const context = await audioEngine.ensureContext();
-    this.visualizer = butterchurn.createVisualizer(context, this.canvas, {
+    this.visualizer = butterchurnApi.createVisualizer(context, this.canvas, {
       width: 640,
       height: 960,
       pixelRatio: 1,
@@ -84,7 +96,10 @@ export class VisualizerEngine extends EventTarget {
         import('butterchurn-presets/lib/butterchurnPresetsExtra2.min.js'),
         import('butterchurn-presets/lib/butterchurnPresetsMD1.min.js'),
       ]);
-      modules.forEach((module) => Object.assign(this.presets, module.default.getPresets()));
+      modules.forEach((module) => {
+        const pack = resolveModuleApi(module, 'getPresets');
+        Object.assign(this.presets, pack.getPresets());
+      });
       this.names = Object.keys(this.presets).sort((a, b) => a.localeCompare(b));
       this.extendedLibraryLoaded = true;
       this.dispatchEvent(new CustomEvent('librarychange', { detail: { count: this.names.length } }));

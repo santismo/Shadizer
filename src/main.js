@@ -108,7 +108,7 @@ app.innerHTML = `
     </section>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <input id="file-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg" hidden />
+    <input id="file-input" class="file-input" type="file" accept=".wav,.wave,audio/wav,audio/x-wav,audio/vnd.wave,.mp3,audio/mpeg,.m4a,audio/mp4,.aac,audio/aac,.flac,audio/flac,.ogg,audio/ogg,audio/*" />
     <audio id="audio" preload="metadata" playsinline></audio>
   </main>
 `;
@@ -161,8 +161,13 @@ async function ensureVisualizer() {
   initialized = true;
 }
 
-async function chooseFile() {
-  elements['file-input'].click();
+function chooseFile() {
+  try {
+    if (typeof elements['file-input'].showPicker === 'function') elements['file-input'].showPicker();
+    else elements['file-input'].click();
+  } catch {
+    elements['file-input'].click();
+  }
 }
 
 async function handleFile(file) {
@@ -176,7 +181,8 @@ async function handleFile(file) {
     requestWakeLock();
   } catch (error) {
     console.error(error);
-    showToast('COULD NOT OPEN THAT AUDIO FILE');
+    const isWav = /\.wav(e)?$/i.test(file.name) || /wav|wave/i.test(file.type);
+    showToast(isWav ? 'COULD NOT DECODE THIS WAV ENCODING' : 'COULD NOT OPEN THAT AUDIO FILE');
   }
 }
 
@@ -188,7 +194,7 @@ async function explore() {
     showToast('SWIPE OR ROLL TO CHANGE SCENES');
   } catch (error) {
     console.error(error);
-    showToast('WEBGL 2 IS REQUIRED');
+    showToast('VISUAL ENGINE COULD NOT START');
   }
 }
 
