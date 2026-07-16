@@ -108,7 +108,7 @@ app.innerHTML = `
     </section>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <input id="file-input" class="file-input" type="file" accept=".wav,.wave,audio/wav,audio/x-wav,audio/vnd.wave,.mp3,audio/mpeg,.m4a,audio/mp4,.aac,audio/aac,.flac,audio/flac,.ogg,audio/ogg,audio/*" />
+    <input id="file-input" class="file-input" type="file" accept=".wav,.wave,audio/wav,audio/x-wav,audio/vnd.wave,.aif,.aiff,audio/aiff,audio/x-aiff,.caf,audio/x-caf,.mp3,audio/mpeg,.m4a,audio/mp4,.aac,audio/aac,.flac,audio/flac,.ogg,audio/ogg" />
     <audio id="audio" preload="metadata" playsinline></audio>
   </main>
 `;
@@ -174,6 +174,13 @@ async function handleFile(file) {
   if (!file) return;
   try {
     await ensureVisualizer();
+  } catch (error) {
+    console.error(error);
+    showToast('VISUAL ENGINE COULD NOT START');
+    return;
+  }
+
+  try {
     await audioEngine.loadFile(file);
     elements['start-screen'].classList.add('is-hidden');
     elements['track-name'].textContent = file.name.replace(/\.[^.]+$/, '').toUpperCase();
