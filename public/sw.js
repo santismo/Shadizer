@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shadizer-shell-v1';
+const CACHE_NAME = 'shadizer-shell-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {

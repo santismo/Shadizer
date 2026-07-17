@@ -1,3 +1,5 @@
+import { prepareAudioFile } from './wav-utils.js';
+
 export class AudioEngine extends EventTarget {
   constructor(audioElement) {
     super();
@@ -56,11 +58,28 @@ export class AudioEngine extends EventTarget {
     await this.ensureContext();
     this.audio.pause();
     if (this.fileUrl) URL.revokeObjectURL(this.fileUrl);
-    this.fileUrl = URL.createObjectURL(file);
+    let prepared = { blob: file, normalized: false, sourceBits: null };
+    try {
+      prepared = await prepareAudioFile(file);
+    } catch (error) {
+      console.warn('WAV normalization was skipped.', error);
+    }
+    this.fileUrl = URL.createObjectURL(prepared.blob);
     this.audio.src = this.fileUrl;
     this.audio.load();
-    this.dispatchEvent(new CustomEvent('trackchange', { detail: { file, name: file.name } }));
-    await this.play();
+    this.dispatchEvent(new CustomEvent('trackchange', {
+      detail: { file, name: file.name, normalized: prepared.normalized, sourceBits: prepared.sourceBits },
+    }));
+
+    try {
+      await this.play();
+      return { playing: true, needsGesture: false, ...prepared };
+    } catch (error) {
+      if (error?.name === 'NotAllowedError') {
+        return { playing: false, needsGesture: true, ...prepared };
+      }
+      throw error;
+    }
   }
 
   async play() {

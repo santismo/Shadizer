@@ -7,8 +7,10 @@ const app = document.querySelector('#app');
 
 app.innerHTML = `
   <main class="app-shell" data-ui="visible">
-    <canvas id="visualizer" aria-label="Audio-reactive visualizer"></canvas>
-    <div class="grain" aria-hidden="true"></div>
+    <section class="visual-stage" aria-label="Portrait visual stage">
+      <canvas id="visualizer" aria-label="Audio-reactive visualizer"></canvas>
+      <div class="grain" aria-hidden="true"></div>
+    </section>
     <div class="blackout-layer" aria-hidden="true"></div>
 
     <header class="topbar performance-ui">
@@ -144,11 +146,11 @@ function shortSceneName(name) {
   return separator > 0 ? cleaned.slice(separator + 3) : cleaned;
 }
 
-function showToast(message) {
+function showToast(message, duration = 1800) {
   elements.toast.textContent = message;
   elements.toast.classList.add('is-visible');
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => elements.toast.classList.remove('is-visible'), 1800);
+  toastTimer = window.setTimeout(() => elements.toast.classList.remove('is-visible'), duration);
 }
 
 async function ensureVisualizer() {
@@ -172,25 +174,41 @@ function chooseFile() {
 
 async function handleFile(file) {
   if (!file) return;
+  shell.classList.add('is-loading');
+  elements['track-name'].textContent = 'PREPARING AUDIO…';
+  showToast('PREPARING AUDIO…', 10000);
+
+  let loadResult;
+  try {
+    // Give iOS the audio source before starting the heavier WebGL engine so the
+    // trusted file-picker gesture is still available for playback.
+    loadResult = await audioEngine.loadFile(file);
+  } catch (error) {
+    console.error(error);
+    const isWav = /\.wav(e)?$/i.test(file.name) || /wav|wave/i.test(file.type);
+    showToast(isWav ? 'COULD NOT DECODE THIS WAV ENCODING' : 'COULD NOT OPEN THAT AUDIO FILE', 3200);
+    elements['track-name'].textContent = 'AUDIO LOAD FAILED';
+    shell.classList.remove('is-loading');
+    return;
+  }
+
+  elements['start-screen'].classList.add('is-hidden');
+  elements['track-name'].textContent = file.name.replace(/\.[^.]+$/, '').toUpperCase();
+
   try {
     await ensureVisualizer();
   } catch (error) {
     console.error(error);
-    showToast('VISUAL ENGINE COULD NOT START');
+    showToast('AUDIO READY — VISUAL ENGINE COULD NOT START', 3200);
+    shell.classList.remove('is-loading');
     return;
   }
 
-  try {
-    await audioEngine.loadFile(file);
-    elements['start-screen'].classList.add('is-hidden');
-    elements['track-name'].textContent = file.name.replace(/\.[^.]+$/, '').toUpperCase();
-    showToast('SIGNAL CONNECTED');
-    requestWakeLock();
-  } catch (error) {
-    console.error(error);
-    const isWav = /\.wav(e)?$/i.test(file.name) || /wav|wave/i.test(file.type);
-    showToast(isWav ? 'COULD NOT DECODE THIS WAV ENCODING' : 'COULD NOT OPEN THAT AUDIO FILE');
-  }
+  shell.classList.remove('is-loading');
+  if (loadResult.needsGesture) showToast('TRACK READY — TAP PLAY', 3200);
+  else if (loadResult.normalized) showToast(`${loadResult.sourceBits}-BIT WAV READY`);
+  else showToast('SIGNAL CONNECTED');
+  if (loadResult.playing) requestWakeLock();
 }
 
 async function explore() {
